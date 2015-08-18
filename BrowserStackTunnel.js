@@ -4,7 +4,7 @@
 
 var fs = require('fs');
 var pathUtil = require('path');
-var request = require('dojo/request');
+var request = require('request-promise');
 var Tunnel = require('./Tunnel');
 var urlUtil = require('url');
 var util = require('./util');
@@ -168,23 +168,23 @@ BrowserStackTunnel.prototype = util.mixin(Object.create(_super), /** @lends modu
 			status: data.status || data.success ? 'completed' : 'error'
 		});
 
-		return request.put('https://www.browserstack.com/automate/sessions/' + jobId + '.json', {
-			data: payload,
-			handleAs: 'text',
-			headers: {
-				'Content-Length': Buffer.byteLength(payload, 'utf8'),
-				'Content-Type': 'application/json'
-			},
-			password: this.accessKey,
-			user: this.username,
-			proxy: this.proxy
-		}).then(function (response) {
-			if (response.statusCode >= 200 && response.statusCode < 300) {
+		return request({
+				url: 'https://www.browserstack.com/automate/sessions/' + jobId + '.json',
+				method: 'PUT',
+				body: payload,
+				headers: {
+						'Content-Length': Buffer.byteLength(payload, 'utf8'),
+						'Content-Type': 'application/json'
+				},
+				auth: {
+						password: this.accessKey,
+						user: this.username
+				},
+				proxy: this.proxy
+		}).then(function () {
 				return true;
-			}
-			else {
-				throw new Error(response.data || 'Server reported ' + response.statusCode + ' with no other data.');
-			}
+		}, function (err) {
+				throw new Error(err.error || 'Server reported ' + err.response + ' with no other data.');
 		});
 	},
 
